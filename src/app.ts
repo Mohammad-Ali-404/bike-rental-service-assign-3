@@ -1,20 +1,27 @@
-import express, { Application, Request, Response } from 'express'
-
-import cors from 'cors'
+import express from 'express'
 import router from './app/routes'
+import cors from 'cors'
+import cookieParser from 'cookie-parser'
+import { globalErrorHandler } from './app/middlewares/globalErrorHandler'
+import notFoundRoute from './app/middlewares/notFoundRoute'
+const app = express()
 
-const app: Application = express()
+// parsers
 
-//parser
 app.use(express.json())
 app.use(cors())
+app.use(cookieParser())
 
-//Application
-app.use('/api', router)
-// app.use("/api/orders", OrdersRoutes);
-
-app.get('/', (req: Request, res: Response) => {
-  res.send('Hello World!')
+app.get('/', (req, res) => {
+  res.json({
+    message: 'Welcome to Bike Rental Service Backend Server',
+  })
 })
+
+app.use('/api', router)
+
+app.use(globalErrorHandler)
+
+app.all('*', notFoundRoute)
 
 export default app
