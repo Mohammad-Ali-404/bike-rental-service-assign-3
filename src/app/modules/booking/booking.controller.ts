@@ -17,8 +17,8 @@ const createBooking = catchAsync(async (req, res) => {
 })
 
 const reutnBookingBike = catchAsync(async (req, res) => {
-  const result = await BookingServices.returnBookingIntoDB(req.params._id)
-
+  const result = await BookingServices.returnBookingIntoDB(req.params.id)
+  console.log(result)
   sendResponse(res, {
     success: true,
     statusCode: httpStatus.OK,

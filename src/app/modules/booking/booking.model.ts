@@ -5,7 +5,7 @@ const bookingSchema = new Schema<TBooking>({
   userId: {
     type: Schema.Types.ObjectId,
     ref: 'User',
-    default: true,
+    // required: true,
   },
   bikeId: {
     type: Schema.Types.ObjectId,

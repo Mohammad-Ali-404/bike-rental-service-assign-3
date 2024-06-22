@@ -25,8 +25,8 @@ const createBookingIntoDB = async (
 }
 
 // return booking
-const returnBookingIntoDB = async (_id: string) => {
-  const findBookedBike = await Booking.findById(_id)
+const returnBookingIntoDB = async (id: string) => {
+  const findBookedBike = await Booking.findById(id)
   console.log(findBookedBike)
   if (!findBookedBike) {
     throw new AppError(httpStatus.NOT_FOUND, 'Rentals not found')
@@ -53,7 +53,7 @@ const returnBookingIntoDB = async (_id: string) => {
 
   // Update the booking with return time, total cost, and return status
   const result = await Booking.findByIdAndUpdate(
-    _id,
+    id,
     {
       returnTime: currentTime,
       totalCost: totalCost.toFixed(2), // Use 2 decimal places for the cost
