@@ -24,39 +24,43 @@ const createBookingIntoDB = async (
   return result
 }
 
-// update booking
-const updateBookingIntoDB = async (id: string) => {
-  // find is booking by id
-  const findBookedBike = await Booking.findById(id)
-
-  const findBike = await Bike.findById(findBookedBike?.bikeId)
-
+// return booking
+const returnBookingIntoDB = async (_id: string) => {
+  const findBookedBike = await Booking.findById(_id)
+  console.log(findBookedBike)
   if (!findBookedBike) {
     throw new AppError(httpStatus.NOT_FOUND, 'Rentals not found')
   }
 
-  const currentTime = new Date().getTime()
-  const bookedTime = findBookedBike?.startTime.getTime()
+  const findBike = await Bike.findById(findBookedBike.bikeId)
 
-  //   make the hours different
-  const differenceHours = (currentTime - bookedTime) / (1000 * 60 * 60)
+  if (!findBike) {
+    throw new AppError(httpStatus.NOT_FOUND, 'Bike not found')
+  }
 
-  const totalCost = Number(differenceHours) * Number(findBike?.pricePerHour)
+  const currentTime = new Date()
+  const bookedTime = findBookedBike.startTime
+  const differenceHours =
+    (currentTime.getTime() - bookedTime.getTime()) / (1000 * 60 * 60)
 
-  await Bike.findByIdAndUpdate(findBookedBike?.bikeId, {
+  // Calculate the total cost
+  const totalCost = differenceHours * findBike.pricePerHour
+
+  // Update the bike's availability status
+  await Bike.findByIdAndUpdate(findBookedBike.bikeId, {
     isAvailable: true,
   })
 
+  // Update the booking with return time, total cost, and return status
   const result = await Booking.findByIdAndUpdate(
-    id,
+    _id,
     {
-      returnTime: new Date(),
-      totalCost: totalCost.toFixed(0),
+      returnTime: currentTime,
+      totalCost: totalCost.toFixed(2), // Use 2 decimal places for the cost
       isReturned: true,
     },
     { new: true },
   )
-
   return result
 }
 
@@ -69,6 +73,6 @@ const getMyAllBookingsIntoDB = async (loggedUser: JwtPayload) => {
 
 export const BookingServices = {
   createBookingIntoDB,
-  updateBookingIntoDB,
+  returnBookingIntoDB,
   getMyAllBookingsIntoDB,
 }

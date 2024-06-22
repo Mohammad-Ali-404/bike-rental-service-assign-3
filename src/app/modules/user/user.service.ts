@@ -1,43 +1,42 @@
 import { JwtPayload } from 'jsonwebtoken'
 import { User } from './user.model'
-import AppError from '../../errors/AppError'
-import httpStatus from 'http-status'
 import { TUser } from './user.interface'
+import httpStatus from 'http-status'
+import AppError from '../../errors/AppError'
 
-// get profile user
+// Get user profile from database
 const getUserProfileFromDB = async (loggedUser: JwtPayload) => {
-  // check user exist
-  const user = await User.isUserExistsByEmail(loggedUser?.email)
-
-  if (!user) {
-    throw new AppError(httpStatus.NOT_FOUND, 'User not found')
-  }
-
-  const result = await User.findById(loggedUser?.id)
-
+  // Check if the user exists by email
+  const result = await User.isUserExistsByEmail(loggedUser?.email)
   return result
 }
 
-// get profile user
+// Update user profile in database
 const updateUserIntoDB = async (
   payload: Partial<TUser>,
   loggedUser: JwtPayload,
 ) => {
-  // check user exist
-  const user = await User.isUserExistsByEmail(loggedUser?.email)
-
-  if (!user) {
-    throw new AppError(httpStatus.NOT_FOUND, 'User not found')
+  if (!loggedUser?.email) {
+    throw new AppError(httpStatus.UNAUTHORIZED, 'User email is missing')
   }
 
+  // Check if the user exists by email
+  const user = await User.isUserExistsByEmail(loggedUser.email)
+  if (!user) {
+    throw new AppError(httpStatus.NOT_FOUND, 'User profile not found')
+  }
+
+  // Update the user profile
   const result = await User.findOneAndUpdate(
-    { _id: loggedUser?.id },
-    {
-      $set: payload,
-    },
+    { _id: user?._id },
+    { $set: payload },
     { new: true },
   )
+  console.log(result, loggedUser.id)
 
+  if (!result) {
+    throw new AppError(httpStatus.NOT_FOUND, 'User profile not found')
+  }
   return result
 }
 

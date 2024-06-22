@@ -7,7 +7,7 @@ const createBookingValidationSchema = z.object({
   }),
 })
 
-const updateBookingValidationSchema = z.object({
+const returnValidationSchema = z.object({
   body: z.object({
     returnTime: z.string().optional(),
     totalCost: z.number().optional(),
@@ -17,5 +17,5 @@ const updateBookingValidationSchema = z.object({
 
 export const bookingValidations = {
   createBookingValidationSchema,
-  updateBookingValidationSchema,
+  returnValidationSchema,
 }

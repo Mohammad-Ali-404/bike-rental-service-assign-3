@@ -7,7 +7,7 @@ import noDataFound from '../../middlewares/noDataFound'
 // create booking controller
 const createBooking = catchAsync(async (req, res) => {
   const result = await BookingServices.createBookingIntoDB(req.body, req.user)
-
+  console.log(result)
   sendResponse(res, {
     success: true,
     statusCode: httpStatus.OK,
@@ -16,8 +16,8 @@ const createBooking = catchAsync(async (req, res) => {
   })
 })
 
-const updateBooking = catchAsync(async (req, res) => {
-  const result = await BookingServices.updateBookingIntoDB(req.params.id)
+const reutnBookingBike = catchAsync(async (req, res) => {
+  const result = await BookingServices.returnBookingIntoDB(req.params._id)
 
   sendResponse(res, {
     success: true,
@@ -44,6 +44,6 @@ const getMyAllBookings = catchAsync(async (req, res) => {
 
 export const BookingController = {
   createBooking,
-  updateBooking,
+  reutnBookingBike,
   getMyAllBookings,
 }

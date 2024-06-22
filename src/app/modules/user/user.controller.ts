@@ -6,7 +6,6 @@ import { UserServices } from './user.service'
 // get user profile controller
 const getUserProfile = catchAsync(async (req, res) => {
   const result = await UserServices.getUserProfileFromDB(req.user)
-
   sendResponse(res, {
     success: true,
     statusCode: httpStatus.OK,
@@ -18,7 +17,7 @@ const getUserProfile = catchAsync(async (req, res) => {
 // update user controller
 const updateUserProfile = catchAsync(async (req, res) => {
   const result = await UserServices.updateUserIntoDB(req.body, req.user)
-
+  console.log(result)
   sendResponse(res, {
     success: true,
     statusCode: httpStatus.OK,

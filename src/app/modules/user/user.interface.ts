@@ -1,8 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Model } from 'mongoose'
 
 export type TUserRole = 'user' | 'admin'
 
 export type TUser = {
+  [x: string]: any
   name: string
   email: string
   password: string

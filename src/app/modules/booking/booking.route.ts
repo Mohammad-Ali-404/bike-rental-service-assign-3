@@ -17,8 +17,8 @@ router.post(
 router.put(
   '/:id/return',
   auth('admin'),
-  validateRequest(bookingValidations.updateBookingValidationSchema),
-  BookingController.updateBooking,
+  validateRequest(bookingValidations.returnValidationSchema),
+  BookingController.reutnBookingBike,
 )
 
 router.get('/', auth('admin', 'user'), BookingController.getMyAllBookings)
