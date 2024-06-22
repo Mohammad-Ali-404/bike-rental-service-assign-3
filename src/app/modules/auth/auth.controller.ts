@@ -14,14 +14,14 @@ const signUp: RequestHandler = catchAsync(async (req, res) => {
   })
 })
 const login: RequestHandler = catchAsync(async (req, res) => {
-  const { token, user } = await AuthServices.login(req.body)
+  const result = await AuthServices.login(req.body)
 
   res.status(httpStatus.OK).json({
     success: true,
     statusCode: httpStatus.OK,
     message: 'User logged in successfuly',
-    token,
-    data: user,
+    token: result.token,
+    data: result.data,
   })
 })
 

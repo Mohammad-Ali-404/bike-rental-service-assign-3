@@ -8,6 +8,12 @@ import { TUser } from '../user/user.interface'
 import AppError from '../../errors/AppError'
 
 const signUp = async (payload: TUser) => {
+  if (await User.isUserExistsByEmail(payload.email)) {
+    throw new AppError(
+      httpStatus.CONFLICT,
+      'This email already exists another user',
+    )
+  }
   const result = await User.create(payload)
   return result
 }
@@ -23,17 +29,18 @@ const login = async (payload: TLoginUser) => {
     throw new AppError(httpStatus.BAD_REQUEST, 'Password is incorrect')
   }
   const jwtPayload = {
-    email: user?.email,
-    role: user?.role,
+    email: user.email,
+    role: user.role,
+    id: user._id,
   }
 
   const token = jwt.sign(jwtPayload, config.jwt_access_secret as string, {
-    expiresIn: config.jwt_access_expires,
+    expiresIn: config.jwt_access_expires as string,
   })
 
   return {
-    token,
-    user,
+    token: token,
+    data: user,
   }
 }
 

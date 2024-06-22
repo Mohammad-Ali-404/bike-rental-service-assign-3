@@ -1,9 +1,9 @@
 import { Schema, model } from 'mongoose'
-import { TUser } from './user.interface'
+import { TUser, UserModel } from './user.interface'
 import config from '../../config'
 import bcrypt from 'bcryptjs'
 
-const userSchema = new Schema<TUser>(
+const userSchema = new Schema<TUser, UserModel>(
   {
     name: {
       type: String,
@@ -45,10 +45,23 @@ userSchema.pre('save', async function (next) {
   next()
 })
 
+// remove password form my response
 userSchema.methods.toJSON = function () {
-  const obj = this.toObject()
-  delete obj.password
-  return obj
+  const user = this.toObject()
+  delete user.password
+  return user
 }
 
-export const User = model<TUser>('Users', userSchema)
+userSchema.statics.isPasswordMatched = async function (
+  plainTextPassword,
+  hashPassword,
+) {
+  return bcrypt.compare(plainTextPassword, hashPassword)
+}
+
+// check user exists provide user email then send true
+userSchema.statics.isUserExistsByEmail = async function (email: string) {
+  return await User.findOne({ email }).select('+password')
+}
+
+export const User = model<TUser, UserModel>('Users', userSchema)
