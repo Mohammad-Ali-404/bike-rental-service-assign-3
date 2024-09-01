@@ -1,9 +1,9 @@
-import { Schema, model } from 'mongoose'
-import { TUser, UserModel } from './user.interface'
-import config from '../../config'
-import bcrypt from 'bcryptjs'
+import { Schema, model } from 'mongoose';
+import { TUser, UserModel } from './user.interface';
+import bcrypt from 'bcryptjs';
+import config from '../../config';
 
-// Define the user schema
+// make user schema model using mongoose one more layer validation
 const userSchema = new Schema<TUser, UserModel>(
   {
     name: {
@@ -13,12 +13,12 @@ const userSchema = new Schema<TUser, UserModel>(
     email: {
       type: String,
       required: true,
-      unique: true, // Ensure email uniqueness
+      unique: true,
     },
     password: {
       type: String,
       required: true,
-      select: false, // By default, do not select the password field
+      select: 0,
     },
     phone: {
       type: String,
@@ -30,46 +30,42 @@ const userSchema = new Schema<TUser, UserModel>(
     },
     role: {
       type: String,
-      enum: ['user', 'admin'],
-      default: 'user', // Default role is 'user'
+      required: true,
     },
   },
   {
     timestamps: true,
   },
-)
+);
 
-// Pre-save middleware to hash the password before saving it to the database
+// secure password
 userSchema.pre('save', async function (next) {
-  if (this.isModified('password')) {
-    // Only hash the password if it has been modified (or is new)
-    this.password = await bcrypt.hash(
-      this.password,
-      Number(config.bcrypt_salt_rounds),
-    )
-  }
-  next()
-})
+  this.password = await bcrypt.hash(
+    this.password,
+    Number(config.bcrypt_salt_rounds),
+  );
 
-// Instance method to remove the password field from the response
+  next();
+});
+
+// remove password form my response
 userSchema.methods.toJSON = function () {
-  const user = this.toObject()
-  delete user.password
-  return user
-}
+  const user = this.toObject();
+  delete user.password;
+  return user;
+};
 
-// Static method to compare the provided plain text password with the hashed password
+// compare password static method
 userSchema.statics.isPasswordMatched = async function (
-  plainTextPassword: string,
-  hashPassword: string,
+  plainTextPassword,
+  hashPassword,
 ) {
-  return bcrypt.compare(plainTextPassword, hashPassword)
-}
+  return bcrypt.compare(plainTextPassword, hashPassword);
+};
 
-// Static method to check if a user exists by email
+// check user exists provide user email then send true
 userSchema.statics.isUserExistsByEmail = async function (email: string) {
-  return User.findOne({ email }).select('+password')
-}
+  return await User.findOne({ email }).select('+password');
+};
 
-// Create and export the User model
-export const User = model<TUser, UserModel>('User', userSchema)
+export const User = model<TUser, UserModel>('User', userSchema);

@@ -1,5 +1,5 @@
-import { Schema, model } from 'mongoose'
-import { TBike } from './bike.interface'
+import { Schema, model } from 'mongoose';
+import { TBike } from './bike.interface';
 
 const bikeSchema = new Schema<TBike>(
   {
@@ -23,6 +23,10 @@ const bikeSchema = new Schema<TBike>(
       type: Number,
       required: true,
     },
+    image: {
+      type: String,
+      required: true,
+    },
     year: {
       type: Number,
       required: true,
@@ -39,6 +43,6 @@ const bikeSchema = new Schema<TBike>(
   {
     timestamps: true,
   },
-)
+);
 
-export const Bike = model<TBike>('Bike', bikeSchema)
+export const Bike = model<TBike>('Bike', bikeSchema);

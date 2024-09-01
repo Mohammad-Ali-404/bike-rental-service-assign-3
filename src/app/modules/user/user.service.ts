@@ -1,46 +1,91 @@
-import { JwtPayload } from 'jsonwebtoken'
-import { User } from './user.model'
-import { TUser } from './user.interface'
-import httpStatus from 'http-status'
-import AppError from '../../errors/AppError'
+import httpStatus from 'http-status';
+import AppError from '../../errors/AppError';
+import { User } from './user.model';
+import { TUser } from './user.interface';
+import { JwtPayload } from 'jsonwebtoken';
+import QueryBuilder from '../../builder/QueryBuilder';
 
-// Get user profile from database
+// get profile user
 const getUserProfileFromDB = async (loggedUser: JwtPayload) => {
-  // Check if the user exists by email
-  const result = await User.isUserExistsByEmail(loggedUser?.email)
-  return result
-}
+  // check user exist
+  const user = await User.isUserExistsByEmail(loggedUser?.email);
 
-// Update user profile in database
+  if (!user) {
+    throw new AppError(httpStatus.NOT_FOUND, 'User not found');
+  }
+
+  const result = await User.findById(user?._id);
+
+  return result;
+};
+
+const getAllUsersFromDB = async (query: Record<string, unknown>) => {
+  const userQuery = new QueryBuilder(User.find(), query)
+    .search(['name'])
+    .filter()
+    .fields()
+    .paginate()
+    .sort();
+  const result = await userQuery.modelQuery;
+  const meta = await userQuery.countTotal();
+
+  return {
+    meta,
+    result,
+  };
+};
+
+// get profile user
 const updateUserIntoDB = async (
   payload: Partial<TUser>,
   loggedUser: JwtPayload,
 ) => {
-  if (!loggedUser?.email) {
-    throw new AppError(httpStatus.UNAUTHORIZED, 'User email is missing')
-  }
+  // check user exist
+  const user = await User.isUserExistsByEmail(loggedUser?.email);
 
-  // Check if the user exists by email
-  const user = await User.isUserExistsByEmail(loggedUser.email)
   if (!user) {
-    throw new AppError(httpStatus.NOT_FOUND, 'User profile not found')
+    throw new AppError(httpStatus.NOT_FOUND, 'User not found');
   }
 
-  // Update the user profile
   const result = await User.findOneAndUpdate(
-    { _id: user?._id },
-    { $set: payload },
+    { email: loggedUser?.email },
+    {
+      $set: payload,
+    },
     { new: true },
-  )
-  console.log(result, loggedUser.id)
+  );
 
-  if (!result) {
-    throw new AppError(httpStatus.NOT_FOUND, 'User profile not found')
+  return result;
+};
+
+const deleteUserFromDB = async (id: string) => {
+  const findUser = await User.findById(id);
+
+  if (!findUser) {
+    throw new AppError(httpStatus.NOT_FOUND, 'User not found');
   }
-  return result
-}
+
+  const result = await User.findByIdAndDelete(id);
+
+  return result;
+};
+
+const updateRoleFromDB = async (id: string, role: string) => {
+  const findUser = await User.findById(id);
+
+  if (!findUser) {
+    throw new AppError(httpStatus.NOT_FOUND, 'User not found');
+  }
+
+  const result = await User.findByIdAndUpdate(id, { role });
+
+  return result;
+};
 
 export const UserServices = {
   getUserProfileFromDB,
   updateUserIntoDB,
-}
+  getAllUsersFromDB,
+  deleteUserFromDB,
+  updateRoleFromDB,
+};

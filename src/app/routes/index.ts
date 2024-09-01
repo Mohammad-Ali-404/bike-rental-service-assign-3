@@ -1,10 +1,15 @@
-import { Router } from 'express'
-import { AuthRoutes } from '../modules/auth/auth.route'
-import { UserRoutes } from '../modules/user/user.route'
-import { BikeRoutes } from '../modules/bike/bike.routes'
-import { BookingRoutes } from '../modules/booking/booking.route'
+import { Router } from 'express';
+import { UserRoutes } from '../modules/user/user.route';
+import { BikeRoutes } from '../modules/bike/bike.route';
+import { AuthRoutes } from '../modules/auth/auth.route';
+import { BookingRoutes } from '../modules/booking/booking.route';
+import { paymentRoutes } from '../modules/payment/payment.route';
+import { CouponRoutes } from '../modules/coupon/coupon.route';
+import { CopyCouponRoute } from '../modules/copyCoupon/copy.route';
 
-const router = Router()
+const router = Router();
+
+// parent route assign
 const moduleRoutes = [
   {
     path: '/auth',
@@ -22,7 +27,20 @@ const moduleRoutes = [
     path: '/rentals',
     route: BookingRoutes,
   },
-]
-moduleRoutes.forEach((route) => router.use(route.path, route.route))
+  {
+    path: '/payments',
+    route: paymentRoutes,
+  },
+  {
+    path: '/coupons',
+    route: CouponRoutes,
+  },
+  {
+    path: '/copy-coupon',
+    route: CopyCouponRoute,
+  },
+];
 
-export default router
+moduleRoutes.forEach((route) => router.use(route.path, route.route));
+
+export default router;

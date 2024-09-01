@@ -1,31 +1,57 @@
-import { RequestHandler } from 'express'
-import catchAsync from '../../utils/catchAsync'
-import sendResponse from '../../utils/sendResponse'
-import httpStatus from 'http-status'
-import { AuthServices } from './auth.service'
+import httpStatus from 'http-status';
+import catchAsync from '../../utils/catchAsync';
+import sendResponse from '../../utils/sendResponse';
+import { AuthService } from './auth.service';
+import config from '../../config';
 
-const signUp: RequestHandler = catchAsync(async (req, res) => {
-  const result = await AuthServices.signUp(req.body)
+// create user controller
+const signupUser = catchAsync(async (req, res) => {
+  const result = await AuthService.signupUser(req.body);
+
+  sendResponse(res, {
+    success: true,
+    statusCode: httpStatus.CREATED,
+    message: 'User registered successfully',
+    data: result,
+  });
+});
+
+// login user controller
+const loginUser = catchAsync(async (req, res) => {
+  const result = await AuthService.loginUser(req.body);
+
+  const { accessToken, refreshToken, data } = result;
+
+  res.cookie('refreshToken', refreshToken, {
+    secure: config.node_env === 'production',
+    httpOnly: true,
+    sameSite: true,
+    maxAge: 1000 * 60 * 60 * 24 * 365,
+  });
+
   sendResponse(res, {
     success: true,
     statusCode: httpStatus.OK,
-    message: 'User registered successfully',
-    data: result,
-  })
-})
-const login: RequestHandler = catchAsync(async (req, res) => {
-  const result = await AuthServices.login(req.body)
+    message: 'User logged in successfully',
+    token: accessToken,
+    data,
+  });
+});
 
-  res.status(httpStatus.OK).json({
-    success: true,
+const refreshToken = catchAsync(async (req, res) => {
+  const { refreshToken } = req.cookies;
+  const result = await AuthService.refreshToken(refreshToken);
+
+  sendResponse(res, {
     statusCode: httpStatus.OK,
-    message: 'User logged in successfuly',
-    token: result.token,
-    data: result.data,
-  })
-})
+    success: true,
+    message: 'Access token is retrieved successfully!',
+    data: result,
+  });
+});
 
-export const AuthControllers = {
-  signUp,
-  login,
-}
+export const AuthController = {
+  signupUser,
+  loginUser,
+  refreshToken,
+};

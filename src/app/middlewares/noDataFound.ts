@@ -1,5 +1,5 @@
-import { Response } from 'express'
-import httpStatus from 'http-status'
+import {  Response } from 'express';
+import httpStatus from 'http-status';
 
 const noDataFound = <T>(res: Response, data: T[]) => {
   if (!data || data.length === 0) {
@@ -7,10 +7,10 @@ const noDataFound = <T>(res: Response, data: T[]) => {
       success: false,
       message: 'No Data Found',
       data: [],
-    })
-  } else {
+    });
+  }else {
     return false
   }
-}
+};
 
-export default noDataFound
+export default noDataFound; 

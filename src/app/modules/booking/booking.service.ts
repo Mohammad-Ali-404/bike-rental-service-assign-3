@@ -1,9 +1,12 @@
-import { JwtPayload } from 'jsonwebtoken'
-import { TBooking } from './booking.interface'
-import { Booking } from './booking.model'
-import AppError from '../../errors/AppError'
-import httpStatus from 'http-status'
-import { Bike } from '../bike/bike.model'
+import { JwtPayload } from 'jsonwebtoken';
+import { TBooking } from './booking.interface';
+import { Booking } from './booking.model';
+import AppError from '../../errors/AppError';
+import httpStatus from 'http-status';
+import { Bike } from '../bike/bike.model';
+import { initiatePayment } from '../payment/payment.utils';
+import { User } from '../user/user.model';
+import { TPaymentInfo } from '../../types/payment.interface';
 
 // booking create service
 const createBookingIntoDB = async (
@@ -13,66 +16,156 @@ const createBookingIntoDB = async (
   const bookingData = {
     ...payload,
     userId: loggedUser?.id,
-  }
+  };
 
+  // find bike and update available status
   await Bike.findByIdAndUpdate(payload.bikeId, {
     isAvailable: false,
-  })
+  });
 
-  const result = await Booking.create(bookingData)
+  const user = await User.findById(loggedUser?.id);
+  const transactionId = `TXN${Date.now()}${Math.floor(10000 + Math.random() * 90000)}`;
 
-  return result
-}
+  const paymentInfo: TPaymentInfo = {
+    transactionId,
+    amount: '100',
+    customerName: user?.name,
+    customerEmail: user?.email,
+    customerPhone: user?.phone,
+    customerAddress: user?.address,
+    paidStatus: 'initial-paid',
+  };
 
-// return booking
-const returnBookingIntoDB = async (id: string) => {
-  const findBookedBike = await Booking.findById(id)
-  console.log(findBookedBike)
+  const paymentSession = await initiatePayment(paymentInfo);
+
+  const bookingWithPayment = {
+    ...bookingData,
+    transactionId,
+  };
+
+  const result = await Booking.create(bookingWithPayment);
+
+  return { result, paymentSession };
+};
+
+const updateBookingWithPayment = async (
+  id: string,
+  loggedUser: JwtPayload,
+  amount: string,
+) => {
+  const findBookedBike = await Booking.findById(id);
+
   if (!findBookedBike) {
-    throw new AppError(httpStatus.NOT_FOUND, 'Rentals not found')
+    throw new AppError(httpStatus.NOT_FOUND, 'Rentals not found');
   }
 
-  const findBike = await Bike.findById(findBookedBike.bikeId)
+  const user = await User.findById(loggedUser?.id);
+  const transactionId = `TXN${Date.now()}${Math.floor(10000 + Math.random() * 90000)}`;
 
-  if (!findBike) {
-    throw new AppError(httpStatus.NOT_FOUND, 'Bike not found')
+  const paymentInfo: TPaymentInfo = {
+    transactionId,
+    amount: amount,
+    customerName: user?.name,
+    customerEmail: user?.email,
+    customerPhone: user?.phone,
+    customerAddress: user?.address,
+    paidStatus: 'full-paid',
+  };
+
+  const paymentSession = await initiatePayment(paymentInfo);
+
+  const bookingWithPayment = {
+    paidStatus: 'full-paid',
+    transactionId,
+  };
+
+  const result = await Booking.findByIdAndUpdate(id, {
+    paidStatus: bookingWithPayment.paidStatus,
+    transactionId: bookingWithPayment.transactionId,
+  });
+
+  return { result, paymentSession };
+};
+
+// update booking
+const updateBookingIntoDB = async (id: string) => {
+  // find is booking by id
+  const findBookedBike = await Booking.findById(id);
+
+  //   find bike using the bikeId in the findBookedBike variable
+  const findBike = await Bike.findById(findBookedBike?.bikeId);
+
+  //   check not find the booked bike then send error
+  if (!findBookedBike) {
+    throw new AppError(httpStatus.NOT_FOUND, 'Rentals not found');
   }
 
-  const currentTime = new Date()
-  const bookedTime = findBookedBike.startTime
-  const differenceHours =
-    (currentTime.getTime() - bookedTime.getTime()) / (1000 * 60 * 60)
+  //   get current date and booked time date
+  const currentTime = new Date().getTime();
+  const bookedTime = findBookedBike?.startTime.getTime();
 
-  // Calculate the total cost
-  const totalCost = differenceHours * findBike.pricePerHour
+  //   make the hours different
+  const differenceHours = (currentTime - bookedTime) / (1000 * 60 * 60);
 
-  // Update the bike's availability status
-  await Bike.findByIdAndUpdate(findBookedBike.bikeId, {
+  //   calculation it and multiply that hours and price per hour
+  const totalCost = Number(differenceHours) * Number(findBike?.pricePerHour);
+
+  // find bike and update available status true
+  await Bike.findByIdAndUpdate(findBookedBike?.bikeId, {
     isAvailable: true,
-  })
+  });
 
-  // Update the booking with return time, total cost, and return status
+  //   update return bike booking rentals
   const result = await Booking.findByIdAndUpdate(
     id,
     {
-      returnTime: currentTime,
-      totalCost: totalCost.toFixed(2), // Use 2 decimal places for the cost
+      returnTime: new Date(),
+      totalCost: totalCost.toFixed(0),
       isReturned: true,
     },
     { new: true },
-  )
-  return result
-}
+  );
+
+  return result;
+};
 
 // get all booking
-const getMyAllBookingsIntoDB = async (loggedUser: JwtPayload) => {
-  const result = await Booking.find({ userId: loggedUser?.id })
+const getMyAllBookingsIntoDB = async (
+  loggedUser: JwtPayload,
+  paidStatus: string,
+) => {
+  let result;
+  if (paidStatus === 'initial-paid') {
+    result = await Booking.find({
+      userId: loggedUser?.id,
+      paidStatus: 'initial-paid',
+      isReturned: true,
+    }).populate('bikeId');
+  } else if (paidStatus === 'full-paid') {
+    result = await Booking.find({
+      userId: loggedUser?.id,
+      paidStatus: 'full-paid',
+      isReturned: true,
+    }).populate('bikeId');
+  } else {
+    result = await Booking.find({
+      userId: loggedUser?.id,
+    }).populate('bikeId');
+  }
 
-  return result
-}
+  return result;
+};
+
+const getMyAllBookingsForAdminIntoDB = async () => {
+  const result = await Booking.find().populate('bikeId');
+
+  return result;
+};
 
 export const BookingServices = {
   createBookingIntoDB,
-  returnBookingIntoDB,
+  updateBookingIntoDB,
   getMyAllBookingsIntoDB,
-}
+  updateBookingWithPayment,
+  getMyAllBookingsForAdminIntoDB,
+};

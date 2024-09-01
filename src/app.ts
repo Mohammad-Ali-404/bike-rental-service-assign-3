@@ -1,27 +1,37 @@
-import cookieParser from 'cookie-parser'
-import express from 'express'
-import router from './app/routes'
+import express, { Application, Request, Response } from 'express'
 import cors from 'cors'
+import cookieParser from 'cookie-parser'
+import router from './app/routes'
 import { globalErrorHandler } from './app/middlewares/globalErrorHandler'
-import notFoundRoute from './app/middlewares/notFoundRoute'
-const app = express()
+import notFoundRoute from './app/middlewares/notFroundRoute'
 
-// parsers
+const app: Application = express()
 
+// CORS Configuration
+const corsOptions = {
+  origin: ['http://localhost:5173', 'https://api.imgbb.com'],
+  credentials: true,
+}
+
+// Middlewares
 app.use(express.json())
-app.use(cors())
 app.use(cookieParser())
+app.use(cors(corsOptions))
 
-app.get('/', (req, res) => {
+// Routes
+app.use('/api', router)
+
+// Global Error Handler
+app.use(globalErrorHandler)
+
+// Default Route
+app.get('/', (req: Request, res: Response) => {
   res.json({
-    message: 'Welcome to Bike Rental Service Backend Server',
+    message: 'Bike Rental Server Running...',
   })
 })
 
-app.use('/api', router)
-
-app.use(globalErrorHandler)
-
-app.all('*', notFoundRoute)
+// 404 Route
+app.use(notFoundRoute)
 
 export default app

@@ -1,25 +1,27 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { Model } from 'mongoose'
+import { Model } from 'mongoose';
 
-export type TUserRole = 'user' | 'admin'
+// user role type
+export type TRole = 'admin' | 'user';
 
+// user type
 export type TUser = {
-  [x: string]: any
-  name: string
-  email: string
-  password: string
-  phone: string
-  address: string
-  role: TUserRole
-}
+  name: string;
+  email: string;
+  password: string;
+  phone: string;
+  address: string;
+  _id?: string;
+  role: TRole;
+};
+
 // make the statics method interface for user validation
 export interface UserModel extends Model<TUser> {
   // check user exists using email interface
-  isUserExistsByEmail(email: string): Promise<TUser>
+  isUserExistsByEmail(email: string): Promise<TUser>;
 
   // password check interface
   isPasswordMatched(
     plainTextPassword: string,
     hashPassword: string,
-  ): Promise<boolean>
+  ): Promise<boolean>;
 }
