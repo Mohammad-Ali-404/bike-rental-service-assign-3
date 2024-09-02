@@ -1,7 +1,7 @@
-import dotenv from 'dotenv';
-import path from 'path';
+import dotenv from 'dotenv'
+import path from 'path'
 
-dotenv.config({ path: path.join((process.cwd(), '.env')) });
+dotenv.config({ path: path.join((process.cwd(), '.env')) })
 
 export default {
   node_env: process.env.NODE_ENV,
@@ -18,4 +18,4 @@ export default {
   store_id: process.env.STOREID,
   signature_key: process.env.SIGNATUREKEY,
   payment_verify_url: process.env.PAYMENT_VERIFY_URL,
-};
+}
